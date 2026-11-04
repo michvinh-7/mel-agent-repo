@@ -21,18 +21,20 @@ import streamlit as st
 def _reload_mel_if_changed():
     """Streamlit reruns this file when code changes (local `git pull`, or Streamlit Cloud pulling a merge),
     but keeps already-imported packages in memory, so new mel/ code would not be used and calls fail with
-    'unexpected keyword argument'. If any mel/*.py file changed since the last run, drop the old modules
-    and cached results so everything below is imported and computed fresh."""
+    'unexpected keyword argument'. The loaded `mel` package is marked with the code timestamp it came from;
+    if it has no mark (loaded by an older version of this app) or an older one, drop the old modules and
+    cached results so everything below is imported and computed fresh."""
     stamp = max(p.stat().st_mtime for p in (Path(__file__).resolve().parents[1] / "mel").rglob("*.py"))
-    if getattr(sys, "_mel_code_stamp", stamp) != stamp:
+    loaded = sys.modules.get("mel")
+    if loaded is not None and getattr(loaded, "_code_stamp", None) != stamp:
         for name in [m for m in sys.modules if m == "mel" or m.startswith("mel.")]:
             del sys.modules[name]
         st.cache_data.clear()
         st.cache_resource.clear()
-    sys._mel_code_stamp = stamp
+    return stamp
 
 
-_reload_mel_if_changed()
+_MEL_STAMP = _reload_mel_if_changed()
 
 from mel.channels import render
 from mel.channels.render import choices
@@ -45,6 +47,8 @@ from mel.schedule.handoff import CapLedger
 from mel.simulator import simulate, simulate_sheet, cases_for
 from mel.writer import (check_survey, write_surveys, FarmerMemory, build_context, summary_lines,
                         history_notes)
+
+sys.modules["mel"]._code_stamp = _MEL_STAMP  # see _reload_mel_if_changed
 
 APP_NAME = "Fasal Pulse - MEL Survey Agent"
 st.set_page_config(page_title=APP_NAME, layout="wide")
