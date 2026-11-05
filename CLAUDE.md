@@ -3,7 +3,7 @@
 Read this first in every new session. Update the **Status** and **Open items** sections whenever work lands
 (and the date below), so the next session starts from the truth.
 
-_Last updated: 2026-11-05 (lucas-p1: weekly cap in `mel.cli run`, REST API, Docker/infra, Py 3.12, DG questions;
+_Last updated: 2026-11-05 (p5: blind-sheet key git-ignored until scored; lucas-p1: weekly cap in `mel.cli run`, REST API, Docker/infra, Py 3.12, DG questions;
 willF-team-open-items: P2 weather note, Hindi "pending review" label, CODEOWNERS P3 = @Semdon31;
 willF-bedrock-writer: compact Bedrock writer, Hindi by translation, replay file, Bedrock questions in the Survey demo
 and in Create your own insight)_
@@ -236,8 +236,11 @@ Function-name choices pending for H+4: `docs/h4_interface_decisions.md` (recomme
   `docs/results/blind_sheet.csv` (20 pairs, today's Haiku writer vs templates, all surveyed advice types, $0 from the
   replay file; key `blind_sheet_key.json`; Bedrock surveys ~2x longer, 136 vs 65 chars). Supersedes
   `hand_scores_bedrock.csv`. Demo script + slides now say the $2.61 run had no guardrail.
-- **REMINDER for P5 (deferred 5 Nov):** score the blind Bedrock sheet `docs/results/hand_scores_bedrock.csv` before
-  claiming model-written surveys beat templates (judge 4.9 vs 4.5 may just reward longer questions).
+- **REMINDER for P5 (deferred 5 Nov):** have people score the blind sheet `docs/results/blind_sheet.csv` (20 pairs;
+  supersedes `hand_scores_bedrock.csv`) with `python scripts/blind_sheet.py score docs/results/blind_sheet_*.csv`
+  before claiming model-written surveys beat templates (judge 4.9 vs 4.5 may just reward longer questions). The
+  Dashboard's "People's blind comparison" panel shows "scoring in progress" until `blind_comparison.json` exists.
+  The key `blind_sheet_key.json` is git-ignored until scoring is done; `make` rebuilds the same sheet and key (checked 5 Nov).
 - P5 (4 Nov, `p5-season-speed`): season walk 2-5x faster (quality-check results cached on survey content in
   `mel/schedule/broadcast.py`, P3 to review): to end of March 10 -> 5 s responsive, 38 -> 8 s never-answers, same
   counts. Judge's `BedrockClient` now wraps P4's `ModelClient` (purpose "judge" in out/bedrock_calls.jsonl);

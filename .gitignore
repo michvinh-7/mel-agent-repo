@@ -9,3 +9,7 @@ v0-sketch/
 
 # Digital Green's Vision and Technical documents (theirs, not ours to publish); summary in docs/deliverables_coverage.md
 docs/*Digital Green FarmerChat*.docx
+
+# Blind sheet key (which survey is Bedrock): kept out of git until people have scored docs/results/blind_sheet.csv.
+# Rebuild it with `python scripts/blind_sheet.py make` (seed 7, same sheet and key). Remove this line after scoring.
+docs/results/blind_sheet_key.json
