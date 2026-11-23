@@ -3,8 +3,9 @@
 Read this first in every new session. Update **Status**, **Live stack** and **Open items** whenever work lands (and the
 date below), so the next session starts from the truth.
 
-_Last updated: 2026-11-23 (C++ port of the decision cascade added in `cpp/`; the live stack is unchanged: fully in
-Terraform state, both images run `main` at 44ca6c5)_
+_Last updated: 2026-11-23 (C++ port of the decision cascade added in `cpp/`; schema checks are remembered by
+content, full-pack `run` 8.9 s -> 6.9 s; the live stack is unchanged: fully in Terraform state, both images run
+`main` at 44ca6c5)_
 
 ## What this is
 Built at the AWS "Breaking Barriers" hackathon (3-5 Nov 2026) for Digital Green (MEL = monitoring, evaluation,
@@ -40,6 +41,8 @@ Activity attention (off by default): `run ... --attention`. The agent alone: `py
   repo's `.env` (copy `.env.example`), then the default; `flag()`, `bedrock_region()`, `full_pack()`. Nothing else
   reads `os.environ` for a `MEL_*` name.
 - `mel/data/`: loaders, JSON Schema validation, Excel parity with the pack, junk report, activity attention.
+  `validate.errors()` is the one schema check everything calls; it remembers results by content (`_SEEN`), because
+  validation is most of a run's time and the same draft, survey and insight used to be checked two or three times.
 - `mel/decision/rules.py` (R1-R8) and `mel/timing/` (send window, send time, crop calendar; `mel/timing/README.md`).
 - `cpp/`: a standalone C++20 port of the R1-R8 cascade (`mel_decide`: insights JSONL in, one decision per line out).
   Brief basis only; no send time, no simulated clock, no answer_key. Nothing in Python calls it and CI does not
@@ -81,7 +84,7 @@ every call; `MEL_JUDGE_MODEL` + `MEL_JUDGE=1` (evaluation) or `MEL_AGENT_JUDGE=1
 `ELEVENLABS_API_KEY` for the voice read-out. AWS credentials come from `~/.aws` or the task role, never from a file here.
 
 ## Status (6 Nov, after the cleanup series)
-- **874 tests pass** (`pytest -q`, about 3 min). `validate`: 12,535 full-pack output files, 0 invalid.
+- **875 tests pass** (`pytest -q`, about 1 min on the Mac). `validate`: 12,535 full-pack output files, 0 invalid.
 - Golden, full pack (150 rows): brief decision 99.3%, rule 99.3%, channel 100%, window match 0%, one miss
   (G-0145, kept R6 on purpose: `mel/timing/README.md`); answer_key 100% / 100% / 100% / 100%. Item similarity 0.99
   (templates copy the key's wording, so in-sample).

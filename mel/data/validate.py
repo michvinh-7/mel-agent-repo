@@ -1,5 +1,6 @@
 """JSON Schema validation for insight / survey / schedule_handoff / response / no_survey / bottom_sheet. Owner: P1."""
 
+import hashlib
 import json
 from functools import lru_cache
 
@@ -29,8 +30,27 @@ def _validator(kind: str) -> Draft202012Validator:
     return Draft202012Validator(schema, registry=_registry())
 
 
+_SEEN: dict[tuple[str, bytes], tuple[str, ...]] = {}
+_SEEN_MAX = 50_000  # the same bound as the scheduler gate's cache (mel/schedule/broadcast.py)
+
+
 def errors(kind: str, obj: dict) -> list[str]:
-    return [f"{'/'.join(map(str, e.path)) or '<root>'}: {e.message}" for e in _validator(kind).iter_errors(obj)]
+    """Schema errors of `obj`, remembered by content. One run checks the same content more than once (a draft in
+    the Verifier and again for its self-evaluation, a finished survey when it is written and again at the
+    scheduler's gate, an insight in the decision and again in the junk report), and the validation is the slow
+    part of a run. The result depends only on the schema and the content, so a changed object is checked again."""
+    # repr, not json.dumps: it keeps what the validator tells apart (a tuple is not an array, the key 1 is not "1").
+    # A 16-byte digest, not the text: a full-pack run remembers about 25,000 objects.
+    key = (kind, hashlib.blake2b(repr(obj).encode("utf-8", "backslashreplace"), digest_size=16).digest())
+    found = _SEEN.get(key)
+    if found is None:
+        found = tuple(
+            f"{'/'.join(map(str, e.path)) or '<root>'}: {e.message}" for e in _validator(kind).iter_errors(obj)
+        )
+        if len(_SEEN) >= _SEEN_MAX:
+            _SEEN.clear()  # ponytail: forgets everything when full; an LRU if a long-lived API ever churns through it
+        _SEEN[key] = found
+    return list(found)
 
 
 def failed_fields(kind: str, obj: dict) -> list[str]:
