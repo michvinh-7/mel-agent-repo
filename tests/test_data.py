@@ -1,5 +1,6 @@
 """P1: loaders, schema validation, Excel parity, junk reasons."""
 
+import importlib
 from pathlib import Path
 
 import pytest
@@ -29,6 +30,28 @@ def test_scenarios_are_schema_valid():
             assert not errors("survey", sv)
         if s["handoff"]:
             assert not errors("schedule_handoff", s["handoff"])
+
+
+def test_schema_errors_are_remembered_by_content(monkeypatch):
+    """The same content is validated once; changed content, or a different type that prints alike, is checked again."""
+    V = importlib.import_module("mel.data.validate")  # `mel.data.validate` the attribute is the function
+    runs, real = [], V._validator
+    monkeypatch.setattr(V, "_validator", lambda kind: runs.append(kind) or real(kind))
+    monkeypatch.setattr(V, "_SEEN", {})
+    survey = load_scenario(list_scenarios()[0])["surveys"]["en-IN"]
+
+    assert errors("survey", survey) == [] and errors("survey", dict(survey)) == []
+    assert len(runs) == 1
+    broken = survey | {"items": []}
+    first = errors("survey", broken)
+    assert first and len(runs) == 2
+    first.append("a caller may change the list it gets")
+    assert errors("survey", broken) == first[:-1] and len(runs) == 2
+    assert errors("survey", survey | {"items": tuple(survey["items"])}), "a tuple is not a JSON array"
+    survey["items"].clear()  # the same object with new content
+    assert errors("survey", survey) == first[:-1]
+    with pytest.raises(ValueError, match="unknown kind"):
+        errors("nope", survey)
 
 
 def test_mock_insights_load():
