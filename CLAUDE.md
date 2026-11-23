@@ -3,8 +3,8 @@
 Read this first in every new session. Update **Status**, **Live stack** and **Open items** whenever work lands (and the
 date below), so the next session starts from the truth.
 
-_Last updated: 2026-11-06 (cleanup series #49-#55 merged; the live stack is fully in Terraform state and both images
-run `main` at 44ca6c5)_
+_Last updated: 2026-11-23 (C++ port of the decision cascade added in `cpp/`; the live stack is unchanged: fully in
+Terraform state, both images run `main` at 44ca6c5)_
 
 ## What this is
 Built at the AWS "Breaking Barriers" hackathon (3-5 Nov 2026) for Digital Green (MEL = monitoring, evaluation,
@@ -41,6 +41,11 @@ Activity attention (off by default): `run ... --attention`. The agent alone: `py
   reads `os.environ` for a `MEL_*` name.
 - `mel/data/`: loaders, JSON Schema validation, Excel parity with the pack, junk report, activity attention.
 - `mel/decision/rules.py` (R1-R8) and `mel/timing/` (send window, send time, crop calendar; `mel/timing/README.md`).
+- `cpp/`: a standalone C++20 port of the R1-R8 cascade (`mel_decide`: insights JSONL in, one decision per line out).
+  Brief basis only; no send time, no simulated clock, no answer_key. Nothing in Python calls it and CI does not
+  build it. `cmake -S cpp -B cpp/build && cmake --build cpp/build`, then `python cpp/check_parity.py` must report
+  every decision equal to `mel.decision.decide`. `validate.cpp` is the insight schema written by hand: change it
+  together with `config/schemas/insight.schema.json`. `third_party/nlohmann/json.hpp` is vendored (v3.12.0).
 - `mel/writer/`: templates (hi/en), guards (safety and format), relevance score + `RELEVANCE_THRESHOLD` (0.3),
   history rules H1-H5, `llm.py` = the one Bedrock client (`ModelClient`: retries, on-disk cache, committed replay
   file `docs/results/bedrock_cache.jsonl`, per-call log `out/bedrock_calls.jsonl`, prices).
